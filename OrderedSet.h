@@ -18,8 +18,8 @@ public:
 	int getHeight(Node* node);
 	int getBalance(Node* root);
 	Node* insert(Node* root, Food* f);
-	Node* searchID(Node* root, int ID);
-	void traversePreorder(Node* root);
+	void searchID(Node* root, int ID);
+	vector<int> traversePreorder(Node* root, string ingredients_, vector<int>& ids);
 	Node* rotateLeft(Node* root);
 	Node* rotateRight(Node* root);
 	Node* rotateLeftRight(Node* root);
@@ -74,27 +74,35 @@ Node* OrderedSet::insert(Node* root, Food* f)
 	return root;
 }
 
-Node* OrderedSet::searchID(Node* root, int ID)
+void OrderedSet::searchID(Node* root, int ID)
 {
 	if (root == nullptr)
-		return nullptr;
+		cout << endl;
 	else if (ID == root->food->id)
-		return root;
+	{
+		cout << "Food ID: " << root->food->id << endl;
+		cout << "Ingredients: " << root->food->ingredients << endl;
+		cout << "Category: " << root->food->category << endl;
+		cout << "Brand: " << root->food->brand << endl;
+	}
 	else if (ID < root->food->id)
-		return searchID(root->left, ID);
+		searchID(root->left, ID);
 	else
-		return searchID(root->right, ID);
+		searchID(root->right, ID);
 }
 
-void OrderedSet::traversePreorder(Node* root) // Traverse whole tree
+vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector<int>& ids) // Traverse whole tree
 {
-	if (root == nullptr)
-		return;
-	else
+	if (root != nullptr)
 	{
-		traversePreorder(root->left);
-		traversePreorder(root->right);
+		size_t found = root->food->ingredients.find(ingredients_);
+		if (found != string::npos)
+			ids.push_back(root->food->id);
+
+		traversePreorder(root->left, ingredients_, ids);
+		traversePreorder(root->right, ingredients_, ids);
 	}
+	return ids;
 }
 
 Node* OrderedSet::rotateLeft(Node* root)
