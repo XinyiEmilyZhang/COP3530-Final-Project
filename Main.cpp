@@ -1,4 +1,3 @@
-#include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -6,28 +5,8 @@
 #include <cctype>
 #include <algorithm>
 #include <unordered_map>
+#include "OrderedSet.h"
 using namespace std;
-
-class Food {
-public:
-	string id;
-	string brand;
-	string ingredients;
-	string category;
-
-	Food() {
-		id = "";
-		brand = "";
-		category = "";
-	}
-	Food(string id_, string brand_, string ingredients_, string category_) {
-		id = id_;
-		brand = brand_;
-		ingredients = ingredients_;
-		category = category_;
-	}
-};
-
 
 unordered_map<string, Food*> readData(string path) { //return a root node for an AVL Tree that contains all food
 	unordered_map<string, Food*> foodList;
@@ -39,7 +18,9 @@ unordered_map<string, Food*> readData(string path) { //return a root node for an
 		istringstream streamFromString(lineFromFile);
 
 		string id_;
+		int id;
 		getline(streamFromString, id_, ',');
+		id = stoi(id_);
 
 		string brand_;
 		getline(streamFromString, brand_, ',');
@@ -60,9 +41,9 @@ unordered_map<string, Food*> readData(string path) { //return a root node for an
 		getline(streamFromString, g, ',');
 
 		string category_;
-		getline(streamFromString, category_, ','); 
+		getline(streamFromString, category_, ',');
 
-		Food* curFood = new Food(id_, brand_, ingredients_, category_);
+		Food* curFood = new Food(id, brand_, ingredients_, category_);
 
 		foodList[id_] = curFood;
 	}
@@ -122,4 +103,3 @@ int main() {
 
 	return 0;
 }
-
