@@ -1,0 +1,89 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class unorderedSet {
+private:
+    int bucketSize;
+    int currSize;
+    int loadFactor;
+
+    //arrays of vector
+    vector<int>* table;
+    //Hash function
+    int hashFunction(int x){
+        return (x % bucketSize);
+    }
+
+public:
+    unorderedSet() {
+        this->bucketSize = 100;
+        this->currSize = 0;
+        this->loadFactor = currSize/bucketSize;
+        table = new vector<int> [bucketSize];
+    }
+
+    void updateLoadFactor(){
+        this->loadFactor = currSize/bucketSize;
+    }
+    vector<int>* hashingForBiggerBucket(){
+        int oldBucketSize = bucketSize;
+        this->bucketSize *= 2;
+        vector<int>* newTable = new vector<int> [bucketSize];
+        for (int i = 0; i < oldBucketSize; i++){
+            auto iter = table[i].begin();
+            for (; iter != table[i].end(); iter++){
+                int index = hashFunction(*iter);
+                newTable[index].push_back(*iter);
+            }
+        }
+        delete[] table;
+        return newTable;
+
+    }
+
+    bool has(int val) {
+        int index = hashFunction(val);
+
+        auto iter = table[index].begin();
+        for (; iter != table[index].end(); iter++){
+            if (*iter == val)
+                return true;
+        }
+        return false;
+    }
+
+
+    void insert(int val) {
+        if (has(val))
+            return;
+        int index = hashFunction(val);
+        table[index].push_back(val);
+        currSize++;
+        updateLoadFactor();
+
+        //If the bucket load factor is 0.75, double the size of the array and re-hash all current values
+        if (loadFactor >= 0.75) {
+            this->table = hashingForBiggerBucket();
+        }
+    }
+
+
+    void rem(int val) {
+        int index = hashFunction(val);
+        auto iter = table[index].begin();
+        for (; iter != table[index].end(); iter++){
+            if (*iter == val)
+                break;
+        }
+        
+        if (iter != table[index].end()){
+            table[index].erase(iter);
+            currSize--;
+        }
+    }
+
+    int size() {
+        return currSize;
+    }
+};
