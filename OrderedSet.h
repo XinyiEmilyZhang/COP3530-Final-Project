@@ -14,119 +14,198 @@ struct Node
 
 class OrderedSet
 {
+	Node* root;
+
+	int getHeight(Node* node);
+	int getBalance(Node* node);
+	Node* rotateLeft(Node* node);
+	Node* rotateRight(Node* node);
+	Node* rotateLeftRight(Node* node);
+	Node* rotateRightLeft(Node* node);
+	Node* insertAfter(Node* node, Food* f);
+	void searchAfter(Node* node, int ID);
+	void traversePreorder(Node* node, string ingredients_, vector<int>& ids);
 public:
-	int getBalance(Node* root);
-	Node* insert(Node* root, Food* f);
-	Node* searchID(Node* root, int ID);
-	void traversePreorder(Node* root);
-	Node* rotateLeft(Node* root);
-	Node* rotateRight(Node* root);
-	Node* rotateLeftRight(Node* root);
-	Node* rotateRightLeft(Node* root);
+	OrderedSet();
+	void insert(Food* f);
+	void searchID(int ID);
+	vector<int> traverse(string ingredients_);
 };
 
-int OrderedSet::getBalance(Node* root)
+OrderedSet::OrderedSet()
 {
-	if (root == nullptr)
-		return 0;
-	return root->left->height - root->right->height;
+	root = nullptr;
 }
 
-Node* OrderedSet::insert(Node* root, Food* f)
+int OrderedSet::getHeight(Node* node)
 {
-	if (root == nullptr)
+	if (node == nullptr)
+		return 0;
+	return node->height;
+}
+
+int OrderedSet::getBalance(Node* node)
+{
+	if (node == nullptr)
+		return 0;
+	return getHeight(node->left) - getHeight(node->right);
+}
+
+Node* OrderedSet::insertAfter(Node* node, Food* f) // insert after root
+{
+	if (node == nullptr)
 	{
-		Node* node = new Node(f);
+		node = new Node(f);
 		return node;
 	}
-	if (f->id == root->food->id)
-		return root;
-	else if (f->id < root->food->id)
-		root->left = insert(root->left, f);
+	if (f->id == node->food->id)
+		return node;
+	else if (f->id < node->food->id)
+		node->left = insertAfter(node->left, f);
 	else
-		return root->right = insert(root->right, f);
+		node->right = insertAfter(node->right, f);
 
-	root->height = max(root->left->height, root->right->height) + 1;
-	
+	node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+
 	// Get balance factor and check if unbalanced
-	int balance = getBalance(root);
+	int balance = getBalance(node);
 
-	if (balance > 1 && f->id < root->left->food->id) // left left case
-		return rotateRight(root);
+	if (balance > 1 && f->id < node->left->food->id) // left left case
+		return rotateRight(node);
 
-	else if (balance < -1 && f->id > root->right->food->id) // right right case
-		return rotateLeft(root);
+	else if (balance < -1 && f->id > node->right->food->id) // right right case
+		return rotateLeft(node);
 
-	else if (balance > 1 && f->id > root->left->food->id) // left right case
-		return rotateLeftRight(root);
+	else if (balance > 1 && f->id > node->left->food->id) // left right case
+		return rotateLeftRight(node);
 
-	else if (balance < -1 && f->id < root->right->food->id) // right left case
-		return rotateRightLeft(root);
+	else if (balance < -1 && f->id < node->right->food->id) // right left case
+		return rotateRightLeft(node);
 
-	return root;
+	return node;
 }
 
-Node* OrderedSet::searchID(Node* root, int ID)
+void OrderedSet::insert(Food* f)
 {
-	if (root == nullptr)
-		return nullptr;
-	else if (ID == root->food->id)
-		return root;
-	else if (ID < root->food->id)
-		return searchID(root->left, ID);
+	if (root == nullptr) // first insertion call
+	{
+		root = new Node(f);
+		return;
+	}
 	else
-		return searchID(root->right, ID);
+	{
+		if (f->id == root->food->id)
+			return;
+		else if (f->id < root->food->id)
+			root->left = insertAfter(root->left, f);
+		else
+			root->right = insertAfter(root->right, f);
+	}
 }
 
-void OrderedSet::traversePreorder(Node* root) // Traverse whole tree
+void OrderedSet::searchAfter(Node* node, int ID) // search after root
+{
+	if (node == nullptr)
+		cout << endl;
+	else if (ID == node->food->id)
+	{
+		cout << "Food ID: " << node->food->id << endl;
+		cout << "Ingredients: " << node->food->ingredients << endl;
+		cout << "Category: " << node->food->category << endl;
+		cout << "Brand: " << node->food->brand << endl;
+	}
+	else if (ID < node->food->id)
+		searchAfter(node->left, ID);
+	else
+		searchAfter(node->right, ID);
+}
+
+void OrderedSet::searchID(int ID)
 {
 	if (root == nullptr)
+		cout << endl;
+	else if (ID == root->food->id)
+	{
+		cout << "Food ID: " << root->food->id << endl;
+		cout << "Ingredients: " << root->food->ingredients << endl;
+		cout << "Category: " << root->food->category << endl;
+		cout << "Brand: " << root->food->brand << endl;
+	}
+	else if (ID < root->food->id)
+		searchAfter(root->left, ID);
+	else
+		searchAfter(root->right, ID);
+}
+
+// Traverse tree after root
+void OrderedSet::traversePreorder(Node* node, string ingredients_, vector<int>& ids)
+{
+	if (node == nullptr)
 		return;
 	else
 	{
-		traversePreorder(root->left);
-		traversePreorder(root->right);
+		size_t found = node->food->ingredients.find(ingredients_);
+		if (found != string::npos)
+			ids.push_back(node->food->id);
+			
+		traversePreorder(node->left, ingredients_, ids);
+		traversePreorder(node->right, ingredients_, ids);
 	}
 }
 
-Node* OrderedSet::rotateLeft(Node* root)
+vector<int> OrderedSet::traverse(string ingredients_) // start at root
 {
-	Node* grandchild = root->right->left;
-	Node* newParent = root->right;
-	newParent->left = root;
-	root->right = grandchild;
+	vector<int> ids;
+	if (root != nullptr)
+	{
+		size_t found = root->food->ingredients.find(ingredients_);
+		if (found != string::npos)
+			ids.push_back(root->food->id);
 
-	root->height = max(root->left->height, root->right->height) + 1;
-	newParent->height = max(newParent->left->height, newParent->right->height) + 1;
+		traversePreorder(root->left, ingredients_, ids);
+		traversePreorder(root->right, ingredients_, ids);
+	}
+	return ids;
+}
+
+Node* OrderedSet::rotateLeft(Node* node)
+{
+	Node* grandchild = node->right->left;
+	Node* newParent = node->right;
+	newParent->left = node;
+	node->right = grandchild;
+
+	node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
 
 	return newParent;
 }
 
-Node* OrderedSet::rotateRight(Node* root)
+Node* OrderedSet::rotateRight(Node* node)
 {
-	Node* grandchild = root->left->right;
-	Node* newParent = root->left;
-	newParent->right = root;
-	root->left = grandchild;
+	Node* grandchild = node->left->right;
+	Node* newParent = node->left;
+	newParent->right = node;
+	node->left = grandchild;
 
-	root->height = max(root->left->height, root->right->height) + 1;
-	newParent->height = max(newParent->left->height, newParent->right->height) + 1;
+	node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
 
 	return newParent;
 }
 
-Node* OrderedSet::rotateLeftRight(Node* root)
+Node* OrderedSet::rotateLeftRight(Node* node)
 {
-	Node* child = root->left;
-	root->left = rotateLeft(child);
+	Node* child = node->left;
+	node->left = rotateLeft(child);
 
-	return rotateRight(root);
+	return rotateRight(node);
 }
 
-Node* OrderedSet::rotateRightLeft(Node* root)
+Node* OrderedSet::rotateRightLeft(Node* node)
 {
-	Node* child = root->right;
-	root->right = rotateRight(child);
+	Node* child = node->right;
+	node->right = rotateRight(child);
 
-	return rotateLeft(root);
+	return rotateLeft(node);
 }
