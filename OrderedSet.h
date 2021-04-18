@@ -20,10 +20,12 @@ public:
 	Node* insert(Node* root, Food* f);
 	void searchID(Node* root, int ID);
 	vector<int> traversePreorder(Node* root, string ingredients_, vector<int>& ids);
+	vector<int> levelOrder(Node* root, string ingredients_);
 	Node* rotateLeft(Node* root);
 	Node* rotateRight(Node* root);
 	Node* rotateLeftRight(Node* root);
 	Node* rotateRightLeft(Node* root);
+	void inorder(Node* root);
 };
 
 int OrderedSet::getHeight(Node* node)
@@ -96,13 +98,45 @@ vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector
 	if (root != nullptr)
 	{
 		size_t found = root->food->ingredients.find(ingredients_);
-		if (found == string::npos)
+		if (found == string::npos) {
 			ids.push_back(root->food->id);
-
+		}
 		traversePreorder(root->left, ingredients_, ids);
 		traversePreorder(root->right, ingredients_, ids);
 	}
 	return ids;
+}
+
+vector<int> OrderedSet::levelOrder(Node* root, string ingredients_) {
+	vector<int> recommendation;
+	queue<Node*> q;
+	q.push(root);
+	while (!q.empty()) {
+		Node* curNode = q.front();
+		if (curNode->left != NULL)
+			q.push(curNode->left);
+		if (curNode->right != NULL)
+			q.push(curNode->right);
+		q.pop();
+		
+		std::size_t found = root->food->ingredients.find(ingredients_);
+		if (found == string::npos) {
+			recommendation.push_back(root->food->id);
+		}
+		
+	}
+
+	return recommendation;
+}
+
+void OrderedSet::inorder(Node* root) {
+	if (root == NULL)
+		cout << "";
+	else {
+		inorder(root->left);
+		cout << root->food->id << " ";
+		inorder(root->right);
+	}
 }
 
 Node* OrderedSet::rotateLeft(Node* root)
