@@ -62,11 +62,23 @@ public:
     void search(int food_id) {
         int index = hashFunction(food_id);
         Food* result;
+        string oldStr = "";
         vector<Food>::iterator iter;
         for (iter = table[index].begin(); iter != table[index].end(); iter++) {
             if (iter->id == food_id) {
+
+                oldStr = iter->ingredients;
+                //Change all '!' to ','
+                stringstream ss(oldStr);
+                string newStr = "";
+                string token;
+                while (getline(ss, token, '!'))
+                {
+                    newStr = newStr + token + ", ";
+                }
+                newStr = newStr.substr(0, newStr.length() - 2);
                 cout << "Food ID: " << iter->id << endl;
-                cout << "Ingredients: " << iter->ingredients << endl;
+                cout << "Ingredients: " << newStr << endl;
                 cout << "Category: " << iter->category << endl;
                 cout << "Brand: " << iter->brand << endl;
                 break;
@@ -75,6 +87,7 @@ public:
     }
 
     void traversal(string unwanted_igd) {
+        int count = 0;
         string ingredients = "";
         for (int i = 0; i < bucketSize; i++) {
             auto iter = table[i].begin();
@@ -85,7 +98,14 @@ public:
                     continue;
                 }
                 else {
-                    cout << iter->id << " ";
+                    if (count < 5) {
+                        cout << iter->id << " ";
+                        count++;
+                    }
+                    else {
+                        cout << "";
+                    }
+
                 }
             }
         }
