@@ -96,7 +96,7 @@ vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector
 	if (root != nullptr)
 	{
 		size_t found = root->food->ingredients.find(ingredients_);
-		if (found != string::npos)
+		if (found == string::npos)
 			ids.push_back(root->food->id);
 
 		traversePreorder(root->left, ingredients_, ids);
