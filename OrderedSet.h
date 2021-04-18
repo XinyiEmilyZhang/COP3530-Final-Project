@@ -1,182 +1,208 @@
-#pragma once
-#include "Food.h"
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cctype>
+#include <algorithm>
+#include <unordered_map>
+#include <queue>
+#include "OrderedSet.h"
+#include "unordered_set.h"
+using namespace std;
 
-struct Node
-{
-	Food* food;
-	int height;
-	Node* left;
-	Node* right;
+unordered_map<int, Food*> readData(string path) { //return a root node for an AVL Tree that contains all food
+	unordered_map<int, Food*> foodList;
 
-	Node() : height(1), left(nullptr), right(nullptr) {}
-	Node(Food* f, int height_ = 1) : food(f), height(height_), left(nullptr), right(nullptr) {}
-};
+	ifstream inFile(path); //use file stream to read a file 
+	string lineFromFile;
+	getline(inFile, lineFromFile); //ignore the first line
+	int count = 0;
+	while (getline(inFile, lineFromFile)) {
+		istringstream streamFromString(lineFromFile);
 
-class OrderedSet
-{
-public:
-	int getHeight(Node* node);
-	int getBalance(Node* root);
-	Node* insert(Node* root, Food* f);
-	void searchID(Node* root, int ID);
-	vector<int> traversePreorder(Node* root, string ingredients_, vector<int>& ids);
-	vector<int> levelOrder(Node* root, string ingredients_);
-	Node* rotateLeft(Node* root);
-	Node* rotateRight(Node* root);
-	Node* rotateLeftRight(Node* root);
-	Node* rotateRightLeft(Node* root);
-	void inorder(Node* root);
-};
+		string id_;
+		int id;
+		getline(streamFromString, id_, ',');
+		id = stoi(id_);
 
-int OrderedSet::getHeight(Node* node)
-{
-	if (node == nullptr)
-		return 0;
-	return node->height;
-}
+		string brand_;
+		getline(streamFromString, brand_, ',');
 
-int OrderedSet::getBalance(Node* root)
-{
-	if (root == nullptr)
-		return 0;
-	return getHeight(root->left) - getHeight(root->right);
-}
+		string c;
+		getline(streamFromString, c, ',');
 
-Node* OrderedSet::insert(Node* root, Food* f)
-{
-	if (root == nullptr)
-	{
-		Node* node = new Node(f);
-		return node;
+		string ingredients_;
+		getline(streamFromString, ingredients_, ',');
+
+		string e;
+		getline(streamFromString, e, ',');
+
+		string f;
+		getline(streamFromString, f, ',');
+
+		string g;
+		getline(streamFromString, g, ',');
+
+		string category_;
+		getline(streamFromString, category_, ',');
+
+		Food* curFood = new Food(id, brand_, ingredients_, category_);
+
+		foodList[id] = curFood;
+		count++;
+		if (count == 1000)
+			break;
 	}
-	if (f->id == root->food->id)
-		return root;
-	else if (f->id < root->food->id)
-		root->left = insert(root->left, f);
-	else
-		root->right = insert(root->right, f);
 
-	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
-
-	// Get balance factor and check if unbalanced
-	int balance = getBalance(root);
-
-	if (balance > 1 && f->id < root->left->food->id) // left left case
-		return rotateRight(root);
-
-	else if (balance < -1 && f->id > root->right->food->id) // right right case
-		return rotateLeft(root);
-
-	else if (balance > 1 && f->id > root->left->food->id) // left right case
-		return rotateLeftRight(root);
-
-	else if (balance < -1 && f->id < root->right->food->id) // right left case
-		return rotateRightLeft(root);
-
-	return root;
+	return foodList;
 }
 
-void OrderedSet::searchID(Node* root, int ID)
-{
-	if (root == nullptr)
-		cout << endl;
-	else if (ID == root->food->id)
-	{
-		cout << "Food ID: " << root->food->id << endl;
-		cout << "Ingredients: " << root->food->ingredients << endl;
-		cout << "Category: " << root->food->category << endl;
-		cout << "Brand: " << root->food->brand << endl;
-	}
-	else if (ID < root->food->id)
-		searchID(root->left, ID);
-	else
-		searchID(root->right, ID);
-}
+unordered_map<string, pair<OrderedSet*, Node*>> createOrderedSets (unordered_map<int, Food*> foodList){
+	unordered_map<string, pair<OrderedSet*, Node*>> orderedSetList;
+	for (auto member : foodList) {
+		Food* curFood = member.second;
+		string category_ = curFood->category;
 
-vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector<int>& ids) // Traverse whole tree
-{
-	if (root != nullptr)
-	{
-		size_t found = root->food->ingredients.find(ingredients_);
-		if (found == string::npos) {
-			ids.push_back(root->food->id);
+		auto itr = orderedSetList.find(category_);
+
+		if (itr != orderedSetList.end()) {  //ordered set already exists 
+			Node* curRoot = itr->second.second;
+			OrderedSet* curSet = itr->second.first;
+		    curRoot = curSet->insert(curRoot, curFood);
+			orderedSetList[category_] = make_pair(curSet, curRoot);
 		}
-		traversePreorder(root->left, ingredients_, ids);
-		traversePreorder(root->right, ingredients_, ids);
-	}
-	return ids;
-}
-
-vector<int> OrderedSet::levelOrder(Node* root, string ingredients_) {
-	vector<int> recommendation;
-	queue<Node*> q;
-	q.push(root);
-	while (!q.empty()) {
-		Node* curNode = q.front();
-		if (curNode->left != NULL)
-			q.push(curNode->left);
-		if (curNode->right != NULL)
-			q.push(curNode->right);
-		q.pop();
-		
-		std::size_t found = root->food->ingredients.find(ingredients_);
-		if (found == string::npos) {
-			recommendation.push_back(root->food->id);
+		else {
+			OrderedSet* newOS = new OrderedSet();
+			Node* newRoot = newOS->insert(NULL, curFood);
+			orderedSetList[category_] = make_pair(newOS, newRoot);
 		}
-		
 	}
 
-	return recommendation;
+	return orderedSetList;
 }
 
-void OrderedSet::inorder(Node* root) {
-	if (root == NULL)
-		cout << "";
-	else {
-		inorder(root->left);
-		cout << root->food->id << " ";
-		inorder(root->right);
+unordered_map<string, unorderedSet*> createUnorderedSets(unordered_map<int, Food*> foodList) {
+	unordered_map<string, unorderedSet*> unorderedSetList;
+	for (auto member : foodList) {
+		Food* curFood = member.second;
+		string category_ = curFood->category;
+
+		auto itr = unorderedSetList.find(category_);
+
+		if (itr != unorderedSetList.end()) {  //ordered set already exists 
+			unorderedSet* curSet = itr->second;
+			curSet->insert(*curFood);
+			unorderedSetList[category_] = curSet;
+		}
+		else {
+			unorderedSet* newSet = new unorderedSet();
+			newSet->insert(*curFood);
+			unorderedSetList[category_] = newSet;
+		}
 	}
+	return unorderedSetList;
 }
 
-Node* OrderedSet::rotateLeft(Node* root)
-{
-	Node* grandchild = root->right->left;
-	Node* newParent = root->right;
-	newParent->left = root;
-	root->right = grandchild;
+int main() {
+	std::cout << "Loading All Your Food (Data Set)..." << endl;
+	unordered_map<int, Food*> foodList = readData("branded_food.csv");
+	std::cout << "All Your Food Is Loaded!" << endl;
 
-	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
-	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
+	//--------------Debug Loading Data Set------------//
+	/*string targetID = "810268";
+	auto itr = foodList.find(targetID);
+	if (itr != foodList.end()) {
+		Food* target = itr->second;
+		std::cout << "brand: " << target->brand << endl;
+		std::cout << "ingredients: " << target->ingredients << endl;
+		std::cout << "category: " << target->category;
+	}
+	*/
 
-	return newParent;
-}
+	while (true) {
+		std::cout << "Input Food Product ID: ";
+		string inputID;
+		std::cin >> inputID;
 
-Node* OrderedSet::rotateRight(Node* root)
-{
-	Node* grandchild = root->left->right;
-	Node* newParent = root->left;
-	newParent->right = root;
-	root->left = grandchild;
+		auto itr = foodList.find(stoi(inputID));
 
-	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
-	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
+		if (itr != foodList.end()) {
+			std::cout << "Food Is Found!" << endl;
+			std::cout << "Input Ingredients You Want To Avoid: ";
+			string inputIngredients;
+			std::cin >> inputIngredients;
+			for (int i = 0; i < inputIngredients.length(); i++) {
+				if (!isupper(inputIngredients[i]))
+					inputIngredients[i] = toupper(inputIngredients[i]); //change input ingredients to upper case to match with data set 
+			}
 
-	return newParent;
-}
+			Food* target = itr->second;
+			int targetID = itr->first;
+			string curIngredients = target->ingredients;
 
-Node* OrderedSet::rotateLeftRight(Node* root)
-{
-	Node* child = root->left;
-	root->left = rotateLeft(child);
+			std::size_t found = curIngredients.find(inputIngredients);
 
-	return rotateRight(root);
-}
+			if (found != string::npos) {
+				std::cout << "This Food Is NOT YOURS Because It Contains " << inputIngredients << endl;
+				std::cout << "Here Are Some Recommendations Of Similar Food :" << endl;
+				
+				
+				unordered_map<string, pair<OrderedSet*, Node*>> ordered_Set_List = createOrderedSets(foodList);
+				unordered_map<string, unorderedSet*> unordered_Set_List = createUnorderedSets(foodList);
 
-Node* OrderedSet::rotateRightLeft(Node* root)
-{
-	Node* child = root->right;
-	root->right = rotateRight(child);
+				/*for (auto member : ordered_Set_List) {
+					OrderedSet* targetSet = member.second.first;
+					Node* targetRoot = member.second.second;
+					targetSet->inorder(targetRoot);
+				}*/
 
-	return rotateLeft(root);
+				cout << "Using Unordered Set: " << endl;
+				for (auto member : unordered_Set_List) {
+					if (member.first == target->category) {
+						unorderedSet* targetSet = member.second;
+						targetSet->traversal(inputIngredients);
+
+						cout << "Insert One Item To Look UP: " << endl;
+						string lookUpID;
+						cin >> lookUpID;
+						targetSet->search(stoi(lookUpID));
+					}
+
+				}
+
+				cout << "Using Ordered Set: " << endl;
+				for (auto member : ordered_Set_List) {
+					if (member.first == target->category) {
+						OrderedSet* targetSet = member.second.first;
+						Node* targetRoot = member.second.second;
+						vector<int> targetID = targetSet->levelOrder(targetRoot, inputIngredients);
+						for (int i = 0; i < targetID.size(); i++) {
+							cout << targetID[i] << " ";
+						}
+						cout << endl;
+
+
+						cout << "Insert One Item To Look UP: " << endl;
+						string lookUpID;
+						cin >> lookUpID;
+						targetSet->searchID(targetRoot, stoi(lookUpID));
+
+					}
+				}
+				
+						    
+
+			}
+			else {
+				std::cout << "This Food Is YOURS. Please Enjoy." << endl;
+			}
+
+		}
+		else {
+			std::cout << "Food Is Not Found!" << endl;
+		}
+	}
+
+
+	return 0;
 }
