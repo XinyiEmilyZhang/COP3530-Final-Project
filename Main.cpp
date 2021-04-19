@@ -58,20 +58,21 @@ unordered_map<int, Food*> readData(string path) {
 }
 
 unordered_map<string, pair<OrderedSet*, Node*>> createOrderedSets(unordered_map<int, Food*> foodList) {
-	unordered_map<string, pair<OrderedSet*, Node*>> orderedSetList;
+	unordered_map<string, pair<OrderedSet*, Node*>> orderedSetList; //we pair the set to its root 
+
 	for (auto member : foodList) {
 		Food* curFood = member.second;
 		string category_ = curFood->category;
 
 		auto itr = orderedSetList.find(category_);
 
-		if (itr != orderedSetList.end()) {  //ordered set already exists 
+		if (itr != orderedSetList.end()) {  //ordered set for this category already exists 
 			Node* curRoot = itr->second.second;
 			OrderedSet* curSet = itr->second.first;
 			curRoot = curSet->insert(curRoot, curFood);
 			orderedSetList[category_] = make_pair(curSet, curRoot);
 		}
-		else {
+		else { //create new ordered set
 			OrderedSet* newOS = new OrderedSet();
 			Node* newRoot = newOS->insert(NULL, curFood);
 			orderedSetList[category_] = make_pair(newOS, newRoot);
@@ -89,7 +90,7 @@ unordered_map<string, unorderedSet*> createUnorderedSets(unordered_map<int, Food
 
 		auto itr = unorderedSetList.find(category_);
 
-		if (itr != unorderedSetList.end()) {  //ordered set already exists 
+		if (itr != unorderedSetList.end()) {  //unordered set for this category already exists 
 			unorderedSet* curSet = itr->second;
 			curSet->insert(*curFood);
 			unorderedSetList[category_] = curSet;
@@ -108,7 +109,7 @@ int main() {
 	std::cout << "Loading All Your Food (Data Set)..." << endl;
 
 	auto start = high_resolution_clock::now();
-	unordered_map<int, Food*> foodList = readData("branded_food.csv");
+	unordered_map<int, Food*> foodList = readData("branded_food.csv"); //load data set
 	std::cout << "All Your Food Is Loaded!" << endl;
 	auto stop = high_resolution_clock::now();
 
@@ -123,7 +124,7 @@ int main() {
 	cout << "************************************************" << endl;
 
 	auto build_Unordered_Set_Start = high_resolution_clock::now();
-	unordered_map<string, unorderedSet*> unordered_Set_List = createUnorderedSets(foodList);
+	unordered_map<string, unorderedSet*> unordered_Set_List = createUnorderedSets(foodList); //create a list of ordered sets
 	auto build_Unordered_Set_End = high_resolution_clock::now();
 	auto build_Unordered_Set_Duration = duration_cast<microseconds>(build_Unordered_Set_End - build_Unordered_Set_Start);
 	cout << "Time To Build All Unordered Sets: " << build_Unordered_Set_Duration.count() << " microseconds" << endl;
@@ -134,7 +135,7 @@ int main() {
 	cout << "************************************************" << endl;
 
 	auto build_Ordered_Set_Start = high_resolution_clock::now();
-	unordered_map<string, pair<OrderedSet*, Node*>> ordered_Set_List = createOrderedSets(foodList);
+	unordered_map<string, pair<OrderedSet*, Node*>> ordered_Set_List = createOrderedSets(foodList); //create a list of unordered sets
 	auto build_Ordered_Set_End = high_resolution_clock::now();
 	auto build_Ordered_Set_Duration = duration_cast<microseconds>(build_Ordered_Set_End - build_Ordered_Set_Start);
 	cout << "Time To Build All Ordered Sets: " << build_Ordered_Set_Duration.count() << " microseconds" << endl;
@@ -166,17 +167,18 @@ int main() {
 
 			std::size_t found = curIngredients.find(inputIngredients);
 
-			if (found != string::npos) {
+			if (found != string::npos) { //if the input food contains the ingredient 
 				std::cout << "This Food Is NOT YOURS Because It Contains " << inputIngredients << endl;
 
 				cout << endl;
+				//----------------Use Unordered Set--------------------//
 
-				for (auto member : unordered_Set_List) {
+				for (auto member : unordered_Set_List) { //locate the set that represents user input food's category
 					if (member.first == target->category) {
 						unorderedSet* targetSet = member.second;
 
 						auto traverse_Unordered_Set_Start = high_resolution_clock::now();
-						vector<int> recList = targetSet->traversal(inputIngredients);
+						vector<int> recList = targetSet->traversal(inputIngredients); //traverse in the same category to find subsitutes 
 						cout << "Use Unordered Set --- Here Are Total Of " << recList.size() << " Recommendations from " << target->category << " That Does Not Contain: " << inputIngredients << endl;
 						if (recList.size() > 5) {
 							cout << "Here Are Five Examples: ";
@@ -205,7 +207,7 @@ int main() {
 						auto search_Unordered_Set_Start = high_resolution_clock::now();
 						cout << endl;
 						cout << "-------------------Product Details----------------------" << endl;
-						targetSet->search(stoi(lookUpID));
+						targetSet->search(stoi(lookUpID));    // Look up an item in the set 
 						auto search_Unordered_Set_End = high_resolution_clock::now();
 						auto search_Unordered_Set_Duration = duration_cast<microseconds>(search_Unordered_Set_End - search_Unordered_Set_Start);
 
@@ -221,13 +223,14 @@ int main() {
 
 				cout << endl;
 
-				for (auto member : ordered_Set_List) {
+				//-----------------------Use Ordered Set--------------------------//
+				for (auto member : ordered_Set_List) {    // locate the set that represents user input food's category
 					if (member.first == target->category) {
 						OrderedSet* targetSet = member.second.first;
 						Node* targetRoot = member.second.second;
 
 						auto traverse_Ordered_Set_Start = high_resolution_clock::now();
-						vector<int> recList = targetSet->levelOrder(targetRoot, inputIngredients);
+						vector<int> recList = targetSet->levelOrder(targetRoot, inputIngredients); //traverse the set to find subsitutues
 						auto traverse_Ordered_Set_End = high_resolution_clock::now();
 
 						cout << "Use Ordered Set --- Here Are Total of " << recList.size() << " Recommendations from " << target->category << " That Does Not Contain: " << inputIngredients << endl;
@@ -257,7 +260,7 @@ int main() {
 						auto search_Ordered_Set_Start = high_resolution_clock::now();
 						cout << endl;
 						cout << "-------------------Product Details----------------------" << endl;
-						targetSet->searchID(targetRoot, stoi(lookUpID));
+						targetSet->searchID(targetRoot, stoi(lookUpID));                        //search an item in the set 
 						auto search_Ordered_Set_End = high_resolution_clock::now();
 						auto search_Ordered_Set_Duration = duration_cast<microseconds>(search_Ordered_Set_End - search_Ordered_Set_Start);
 
@@ -273,17 +276,16 @@ int main() {
 				}
 
 			}
-			else {
+			else { //if the input food does not contain the ingredient 
 				cout << "This Food Is YOURS. Please Enjoy." << endl;
 				cout << endl;
 				Food* yourFood = foodList[stoi(inputID)];
 				string oldStr = "";
 				oldStr = yourFood->ingredients;
-				//Change all '!' to ','
-				stringstream ss(oldStr);
+				stringstream ss(oldStr);  //Change all '!' to ',' http://www.cplusplus.com/forum/general/116829/
 				string newStr = "";
-				string token;
-				while (getline(ss, token, '!'))
+				string token; 
+				while (getline(ss, token, '!')) 
 				{
 					newStr = newStr + token + ", ";
 				}
