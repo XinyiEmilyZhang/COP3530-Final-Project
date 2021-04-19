@@ -1,7 +1,7 @@
 #pragma once
 #include "Food.h"
 
-struct Node
+struct Node // Tree node for AVL tree
 {
 	Food* food;
 	int height;
@@ -28,14 +28,14 @@ public:
 	void inorder(Node* root);
 };
 
-int OrderedSet::getHeight(Node* node)
+int OrderedSet::getHeight(Node* node) // get height of current node
 {
 	if (node == nullptr)
 		return 0;
 	return node->height;
 }
 
-int OrderedSet::getBalance(Node* root)
+int OrderedSet::getBalance(Node* root) // get balance factor
 {
 	if (root == nullptr)
 		return 0;
@@ -76,7 +76,7 @@ Node* OrderedSet::insert(Node* root, Food* f)
 	return root;
 }
 
-void OrderedSet::searchID(Node* root, int ID)
+void OrderedSet::searchID(Node* root, int ID) // search node given food id
 {
 	string oldStr = "";
 	if (root == nullptr)
@@ -93,7 +93,8 @@ void OrderedSet::searchID(Node* root, int ID)
 			newStr = newStr + token + ", ";
 		}
 		newStr = newStr.substr(0, newStr.length() - 2);
-
+		
+		// Print out all food info
 		cout << "Food ID: " << root->food->id << endl;
 		cout << "Ingredients: " << newStr << endl;
 		cout << "Category: " << root->food->category << endl;
@@ -105,7 +106,7 @@ void OrderedSet::searchID(Node* root, int ID)
 		searchID(root->right, ID);
 }
 
-
+ // Traverse entire tree and return vector of food ids that don't have the ingredients passed in
 vector<int> OrderedSet::levelOrder(Node* root, string ingredients_) {
 	vector<int> recommendation;
 	queue<Node*> q;
@@ -138,7 +139,7 @@ void OrderedSet::inorder(Node* root) {
 	}
 }
 
-// Rotate functions from Project 1
+// Rotate functions used from Project 1 code
 Node* OrderedSet::rotateLeft(Node* root)
 {
 	Node* grandchild = root->right->left;
