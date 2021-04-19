@@ -86,8 +86,8 @@ public:
         }
     }
 
-    void traversal(string unwanted_igd) {
-        int count = 0;
+    vector<int> traversal(string unwanted_igd) {
+        vector<int> result;
         string ingredients = "";
         for (int i = 0; i < bucketSize; i++) {
             auto iter = table[i].begin();
@@ -98,18 +98,12 @@ public:
                     continue;
                 }
                 else {
-                    if (count < 5) {
-                        cout << iter->id << " ";
-                        count++;
-                    }
-                    else {
-                        cout << "";
-                    }
-
+                    result.push_back(iter->id);
                 }
             }
         }
-        cout << endl;
+        sort(result.begin(),result.end()+result.size());
+        return result;
     }
 
     int size() {
