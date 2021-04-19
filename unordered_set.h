@@ -102,7 +102,7 @@ public:
                 }
             }
         }
-        sort(result.begin(),result.end()+result.size());
+        sort(result.begin(),result.end());
         return result;
     }
 
