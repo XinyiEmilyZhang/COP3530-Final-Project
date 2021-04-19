@@ -127,6 +127,7 @@ int main() {
 	unordered_map<string, unorderedSet*> unordered_Set_List = createUnorderedSets(foodList);
 	auto build_Unordered_Set_End = high_resolution_clock::now();
 	auto build_Unordered_Set_Duration = duration_cast<microseconds>(build_Unordered_Set_End - build_Unordered_Set_Start);
+	cout << "Time To Build All Unordered Sets: " << build_Unordered_Set_Duration.count() << " microseconds" << endl;
 
 	cout << "************************************************" << endl;
 	cout << "Group Food Based On Categories To Ordered Set" << endl;
@@ -137,7 +138,7 @@ int main() {
 	unordered_map<string, pair<OrderedSet*, Node*>> ordered_Set_List = createOrderedSets(foodList);
 	auto build_Ordered_Set_End = high_resolution_clock::now();
 	auto build_Ordered_Set_Duration = duration_cast<microseconds>(build_Ordered_Set_End - build_Ordered_Set_Start);
-
+	cout << "Time To Build All Ordered Sets: " << build_Ordered_Set_Duration.count() << " microseconds" << endl;
 
 	while (true) {
 		std::cout << "Input Food Product ID: ";
@@ -168,13 +169,29 @@ int main() {
 				std::cout << "This Food Is NOT YOURS Because It Contains " << inputIngredients << endl;
 			
 				cout << endl;
-				std::cout << "Use Unordered Set --- Here Are Some Recommendations Of " << target->category << " That Does Not Contain: " << inputIngredients << endl;
+		
 				for (auto member : unordered_Set_List) {
 					if (member.first == target->category) {
 						unorderedSet* targetSet = member.second;
 
 						auto traverse_Unordered_Set_Start = high_resolution_clock::now();
-						targetSet->traversal(inputIngredients);
+						vector<int> recList = targetSet->traversal(inputIngredients);
+						cout << "Use Unordered Set --- Here Are Total Of " << recList.size() << " Recommendations from " << target->category << " That Does Not Contain: " << inputIngredients << endl;
+						if (recList.size() > 5) {
+							cout << "Here Are Five Examples: ";
+							cout << recList[0] << " ";
+							cout << recList[recList.size() / 4] << " ";
+							cout << recList[recList.size() / 2] << " ";
+							cout << recList[recList.size() * 3 / 4] << " ";
+							cout << recList[recList.size() - 1] << " ";
+						}
+						else {
+							std::cout << "Here Are Your Suggestions: ";
+							for (unsigned i = 0; i < recList.size(); i++) {
+								cout << recList[i] << " ";
+							}
+						}
+
 						cout << endl;
 						auto traverse_Unordered_Set_End = high_resolution_clock::now();
 
@@ -203,21 +220,29 @@ int main() {
 				cout << endl;
 				cout << endl;
 
-				std::cout << "Use Ordered Set --- Here Are Some Recommendations Of " << target->category << " That Does Not Contain: " << inputIngredients << endl;
 				for (auto member : ordered_Set_List) {
 					if (member.first == target->category) {
 						OrderedSet* targetSet = member.second.first;
 						Node* targetRoot = member.second.second;
 
 						auto traverse_Ordered_Set_Start = high_resolution_clock::now();
-						vector<int> targetID = targetSet->levelOrder(targetRoot, inputIngredients);
+						vector<int> recList = targetSet->levelOrder(targetRoot, inputIngredients);
 						auto traverse_Ordered_Set_End = high_resolution_clock::now();
 
-						int limit = targetID.size();
-						if (targetID.size() > 5)
-							limit = 5;
-						for (int i = 0; i < limit; i++) { //we collect all items but only print out five 
-							cout << targetID[i] << " ";
+						cout << "Use Ordered Set --- Here Are Total of " << recList.size() << " Recommendations from " << target->category << " That Does Not Contain: " << inputIngredients << endl;
+						if (recList.size() > 5) {
+							cout << "Here Are Five Examples: ";
+							cout << recList[0] << " ";
+							cout << recList[recList.size() / 4] << " ";
+							cout << recList[recList.size() / 2] << " ";
+							cout << recList[recList.size() * 3 / 4] << " ";
+							cout << recList[recList.size() - 1] << " ";
+						}
+						else {
+							std::cout << "Here Are Your Suggestions: ";
+							for (unsigned i = 0; i < recList.size(); i++) {
+								cout << recList[i] << " ";
+							}
 						}
 						cout << endl;
 
