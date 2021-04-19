@@ -105,19 +105,6 @@ void OrderedSet::searchID(Node* root, int ID)
 		searchID(root->right, ID);
 }
 
-vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector<int>& ids) // Traverse whole tree
-{
-	if (root != nullptr)
-	{
-		size_t found = root->food->ingredients.find(ingredients_);
-		if (found == string::npos) {
-			ids.push_back(root->food->id);
-		}
-		traversePreorder(root->left, ingredients_, ids);
-		traversePreorder(root->right, ingredients_, ids);
-	}
-	return ids;
-}
 
 vector<int> OrderedSet::levelOrder(Node* root, string ingredients_) {
 	vector<int> recommendation;
