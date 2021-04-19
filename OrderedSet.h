@@ -1,264 +1,195 @@
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cctype>
-#include <algorithm>
-#include <unordered_map>
-#include <queue>
-#include <chrono>
-#include "OrderedSet.h"
-#include "unordered_set.h"
-using namespace std;
-using namespace std::chrono;
+#pragma once
+#include "Food.h"
 
-unordered_map<int, Food*> readData(string path) {
-	unordered_map<int, Food*> foodList;
+struct Node
+{
+	Food* food;
+	int height;
+	Node* left;
+	Node* right;
 
-	ifstream inFile(path); //use file stream to read a file 
-	string lineFromFile;
-	getline(inFile, lineFromFile); //ignore the first line
-	int count = 0;
-	while (getline(inFile, lineFromFile)) {
-		istringstream streamFromString(lineFromFile);
+	Node() : height(1), left(nullptr), right(nullptr) {}
+	Node(Food* f, int height_ = 1) : food(f), height(height_), left(nullptr), right(nullptr) {}
+};
 
-		string id_;
-		int id;
-		getline(streamFromString, id_, ',');
-		id = stoi(id_);
+class OrderedSet
+{
+public:
+	int getHeight(Node* node);
+	int getBalance(Node* root);
+	Node* insert(Node* root, Food* f);
+	void searchID(Node* root, int ID);
+	vector<int> traversePreorder(Node* root, string ingredients_, vector<int>& ids);
+	vector<int> levelOrder(Node* root, string ingredients_);
+	Node* rotateLeft(Node* root);
+	Node* rotateRight(Node* root);
+	Node* rotateLeftRight(Node* root);
+	Node* rotateRightLeft(Node* root);
+	void inorder(Node* root);
+};
 
-		string brand_;
-		getline(streamFromString, brand_, ',');
-
-		string c;
-		getline(streamFromString, c, ',');
-
-		string ingredients_;
-		getline(streamFromString, ingredients_, ',');
-
-		string e;
-		getline(streamFromString, e, ',');
-
-		string f;
-		getline(streamFromString, f, ',');
-
-		string g;
-		getline(streamFromString, g, ',');
-
-		string category_;
-		getline(streamFromString, category_, ',');
-
-		Food* curFood = new Food(id, brand_, ingredients_, category_);
-
-		foodList[id] = curFood;
-	
-	}
-
-	return foodList;
+int OrderedSet::getHeight(Node* node)
+{
+	if (node == nullptr)
+		return 0;
+	return node->height;
 }
 
-unordered_map<string, pair<OrderedSet*, Node*>> createOrderedSets (unordered_map<int, Food*> foodList){
-	unordered_map<string, pair<OrderedSet*, Node*>> orderedSetList;
-	for (auto member : foodList) {
-		Food* curFood = member.second;
-		string category_ = curFood->category;
-
-		auto itr = orderedSetList.find(category_);
-
-		if (itr != orderedSetList.end()) {  //ordered set already exists 
-			Node* curRoot = itr->second.second;
-			OrderedSet* curSet = itr->second.first;
-		    curRoot = curSet->insert(curRoot, curFood);
-			orderedSetList[category_] = make_pair(curSet, curRoot);
-		}
-		else {
-			OrderedSet* newOS = new OrderedSet();
-			Node* newRoot = newOS->insert(NULL, curFood);
-			orderedSetList[category_] = make_pair(newOS, newRoot);
-		}
-	}
-
-	return orderedSetList;
+int OrderedSet::getBalance(Node* root)
+{
+	if (root == nullptr)
+		return 0;
+	return getHeight(root->left) - getHeight(root->right);
 }
 
-unordered_map<string, unorderedSet*> createUnorderedSets(unordered_map<int, Food*> foodList) {
-	unordered_map<string, unorderedSet*> unorderedSetList;
-	for (auto member : foodList) {
-		Food* curFood = member.second;
-		string category_ = curFood->category;
-
-		auto itr = unorderedSetList.find(category_);
-
-		if (itr != unorderedSetList.end()) {  //ordered set already exists 
-			unorderedSet* curSet = itr->second;
-			curSet->insert(*curFood);
-			unorderedSetList[category_] = curSet;
-		}
-		else {
-			unorderedSet* newSet = new unorderedSet();
-			newSet->insert(*curFood);
-			unorderedSetList[category_] = newSet;
-		}
+Node* OrderedSet::insert(Node* root, Food* f)
+{
+	if (root == nullptr)
+	{
+		Node* node = new Node(f);
+		return node;
 	}
-	return unorderedSetList;
+	if (f->id == root->food->id)
+		return root;
+	else if (f->id < root->food->id)
+		root->left = insert(root->left, f);
+	else
+		root->right = insert(root->right, f);
+
+	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
+
+	// Get balance factor and check if unbalanced
+	int balance = getBalance(root);
+
+	if (balance > 1 && f->id < root->left->food->id) // left left case
+		return rotateRight(root);
+
+	else if (balance < -1 && f->id > root->right->food->id) // right right case
+		return rotateLeft(root);
+
+	else if (balance > 1 && f->id > root->left->food->id) // left right case
+		return rotateLeftRight(root);
+
+	else if (balance < -1 && f->id < root->right->food->id) // right left case
+		return rotateRightLeft(root);
+
+	return root;
 }
 
-int main() {
-	
-	std::cout << "Loading All Your Food (Data Set)..." << endl;
-
-	auto start = high_resolution_clock::now();
-	unordered_map<int, Food*> foodList = readData("branded_food.csv");
-	std::cout << "All Your Food Is Loaded!" << endl;
-	auto stop = high_resolution_clock::now();
-
-	auto duration = duration_cast<seconds>(stop - start);
-	cout << "*-----------------------------------------------------*" << endl;
-	cout << "Time to Load Data: " << duration.count() << " seconds" << endl;
-	cout << "*-----------------------------------------------------*" << endl;
-	cout << endl;
-
-	cout << "************************************************" << endl;
-	cout << "Group Food Based On Categories To Unordered Set" << endl;
-	cout << "************************************************" << endl;
-	cout << endl;
-
-	auto build_Unordered_Set_Start = high_resolution_clock::now();
-	unordered_map<string, unorderedSet*> unordered_Set_List = createUnorderedSets(foodList);
-	auto build_Unordered_Set_End = high_resolution_clock::now();
-	auto build_Unordered_Set_Duration = duration_cast<microseconds>(build_Unordered_Set_End - build_Unordered_Set_Start);
-
-	cout << "************************************************" << endl;
-	cout << "Group Food Based On Categories To Ordered Set" << endl;
-	cout << "************************************************" << endl;
-	cout << endl;
-
-	auto build_Ordered_Set_Start = high_resolution_clock::now();
-	unordered_map<string, pair<OrderedSet*, Node*>> ordered_Set_List = createOrderedSets(foodList);
-	auto build_Ordered_Set_End = high_resolution_clock::now();
-	auto build_Ordered_Set_Duration = duration_cast<microseconds>(build_Ordered_Set_End - build_Ordered_Set_Start);
-
-
-	while (true) {
-		std::cout << "Input Food Product ID: ";
-		string inputID;
-		std::cin >> inputID;
-
-		auto itr = foodList.find(stoi(inputID));
-		
-		if (itr != foodList.end()) { //find whether the input id is valid
-			std::cout << "Food Is Found!" << endl;
-			cout << endl;
-			std::cout << "Input Ingredients You Want To Avoid: ";
-			string inputIngredients;
-			std::cin >> inputIngredients;
-			for (int i = 0; i < inputIngredients.length(); i++) {
-				if (!isupper(inputIngredients[i]))
-					inputIngredients[i] = toupper(inputIngredients[i]); //change input ingredients to upper case to match with data set 
-			}
-
-			Food* target = itr->second;
-			int targetID = itr->first;
-			string curIngredients = target->ingredients;
-			std::cout << endl;
-
-			std::size_t found = curIngredients.find(inputIngredients);
-
-			if (found != string::npos) {
-				std::cout << "This Food Is NOT YOURS Because It Contains " << inputIngredients << endl;
-			
-				cout << endl;
-				std::cout << "Use Unordered Set --- Here Are Some Recommendations Of " << target->category << " That Does Not Contain: " << inputIngredients << endl;
-				for (auto member : unordered_Set_List) {
-					if (member.first == target->category) {
-						unorderedSet* targetSet = member.second;
-
-						auto traverse_Unordered_Set_Start = high_resolution_clock::now();
-						targetSet->traversal(inputIngredients);
-						cout << endl;
-						auto traverse_Unordered_Set_End = high_resolution_clock::now();
-
-						auto traverse_Unordered_Set_Duration = duration_cast<microseconds>(traverse_Unordered_Set_End - traverse_Unordered_Set_Start);
-			      		cout << "Insert One Item To Look UP: " << endl;
-						string lookUpID;
-						cin >> lookUpID;
-
-						auto search_Unordered_Set_Start = high_resolution_clock::now();
-						cout << endl;
-						cout << "-------------------Product Detials----------------------" << endl;
-						targetSet->search(stoi(lookUpID));
-						auto search_Unordered_Set_End = high_resolution_clock::now();
-						auto search_Unordered_Set_Duration = duration_cast<microseconds>(search_Unordered_Set_End - search_Unordered_Set_Start);
-
-						cout << endl;
-						cout << "*-----------------------------------------------------*" << endl;
-						cout << "Time To Build All Unordered Sets: " << build_Unordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "Time to Traverse An Unordered Set: " << traverse_Unordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "Time to Search In An Unordered Set: " << search_Unordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "*-----------------------------------------------------*" << endl;
-						cout << endl;
-					}
-				}
-				
-				cout << endl;
-				cout << endl;
-
-				std::cout << "Use Ordered Set --- Here Are Some Recommendations Of " << target->category << " That Does Not Contain: " << inputIngredients << endl;
-				for (auto member : ordered_Set_List) {
-					if (member.first == target->category) {
-						OrderedSet* targetSet = member.second.first;
-						Node* targetRoot = member.second.second;
-
-						auto traverse_Ordered_Set_Start = high_resolution_clock::now();
-						vector<int> targetID = targetSet->levelOrder(targetRoot, inputIngredients);
-						auto traverse_Ordered_Set_End = high_resolution_clock::now();
-
-						int limit = targetID.size();
-						if (targetID.size() > 5)
-							limit = 5;
-						for (int i = 0; i < limit; i++) { //we collect all items but only print out five 
-							cout << targetID[i] << " ";
-						}
-						cout << endl;
-
-						auto traverse_Ordered_Set_Duration = duration_cast<microseconds>(traverse_Ordered_Set_End - traverse_Ordered_Set_Start);
-
-						cout << "Insert One Item To Look UP: " << endl;
-						string lookUpID;
-						cin >> lookUpID;
-
-						auto search_Ordered_Set_Start = high_resolution_clock::now();
-						cout << endl;
-						cout << "-------------------Product Detials----------------------" << endl;
-						targetSet->searchID(targetRoot, stoi(lookUpID));
-						auto search_Ordered_Set_End = high_resolution_clock::now();
-						auto search_Ordered_Set_Duration = duration_cast<microseconds>(search_Ordered_Set_End - search_Ordered_Set_Start);
-
-						cout << endl;
-						cout << "*-----------------------------------------------------*" << endl;
-						cout << "Time to Build All Ordered Sets: " << build_Ordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "Time to Traverse An Ordered Set: " << traverse_Ordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "Time to Search In An Ordered Set: " << search_Ordered_Set_Duration.count() << " microseconds" << endl;
-						cout << "*-----------------------------------------------------*" << endl;
-						cout << endl;
-
-					}
-				}
-			   
-			}
-			else {
-				std::cout << "This Food Is YOURS. Please Enjoy." << endl;
-				std::cout << endl;
-			}
-
+void OrderedSet::searchID(Node* root, int ID)
+{
+	string oldStr = "";
+	if (root == nullptr)
+		cout << endl;
+	else if (ID == root->food->id)
+	{
+		oldStr = root->food->ingredients;
+		//Change all '!' to ','
+		stringstream ss(oldStr);
+		string newStr = "";
+		string token;
+		while (getline(ss, token, '!'))
+		{
+			newStr = newStr + token + ", ";
 		}
-		else { //input ID not valid 
-			std::cout << "Food Is Not Found!" << endl;
-			std::cout << endl;
-			
-		}
+		newStr = newStr.substr(0, newStr.length() - 2);
+
+		cout << "Food ID: " << root->food->id << endl;
+		cout << "Ingredients: " << newStr << endl;
+		cout << "Category: " << root->food->category << endl;
+		cout << "Brand: " << root->food->brand << endl;
 	}
+	else if (ID < root->food->id)
+		searchID(root->left, ID);
+	else
+		searchID(root->right, ID);
+}
 
+vector<int> OrderedSet::traversePreorder(Node* root, string ingredients_, vector<int>& ids) // Traverse whole tree
+{
+	if (root != nullptr)
+	{
+		size_t found = root->food->ingredients.find(ingredients_);
+		if (found == string::npos) {
+			ids.push_back(root->food->id);
+		}
+		traversePreorder(root->left, ingredients_, ids);
+		traversePreorder(root->right, ingredients_, ids);
+	}
+	return ids;
+}
 
-	return 0;
+vector<int> OrderedSet::levelOrder(Node* root, string ingredients_) {
+	vector<int> recommendation;
+	queue<Node*> q;
+	q.push(root);
+	while (!q.empty()) {
+		Node* curNode = q.front();
+		if (curNode->left != NULL)
+			q.push(curNode->left);
+		if (curNode->right != NULL)
+			q.push(curNode->right);
+		q.pop();
+		//cout << curNode->food->id << " ";
+		std::size_t found = curNode->food->ingredients.find(ingredients_);
+		if (found == string::npos) {
+			recommendation.push_back(curNode->food->id);
+		}
+
+	}
+	sort(recommendation.begin(), recommendation.end());
+	return recommendation;
+}
+
+void OrderedSet::inorder(Node* root) {
+	if (root == NULL)
+		cout << "";
+	else {
+		inorder(root->left);
+		cout << root->food->id << " ";
+		inorder(root->right);
+	}
+}
+
+// Rotate functions from Project 1
+Node* OrderedSet::rotateLeft(Node* root)
+{
+	Node* grandchild = root->right->left;
+	Node* newParent = root->right;
+	newParent->left = root;
+	root->right = grandchild;
+
+	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
+	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
+
+	return newParent;
+}
+
+Node* OrderedSet::rotateRight(Node* root)
+{
+	Node* grandchild = root->left->right;
+	Node* newParent = root->left;
+	newParent->right = root;
+	root->left = grandchild;
+
+	root->height = max(getHeight(root->left), getHeight(root->right)) + 1;
+	newParent->height = max(getHeight(newParent->left), getHeight(newParent->right)) + 1;
+
+	return newParent;
+}
+
+Node* OrderedSet::rotateLeftRight(Node* root)
+{
+	Node* child = root->left;
+	root->left = rotateLeft(child);
+
+	return rotateRight(root);
+}
+
+Node* OrderedSet::rotateRightLeft(Node* root)
+{
+	Node* child = root->right;
+	root->right = rotateRight(child);
+
+	return rotateLeft(root);
 }
